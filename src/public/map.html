@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>DeviceGuard Live Tracking</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+    }
+
+    body{
+      background:#000;
+      overflow:hidden;
+      font-family:Arial, Helvetica, sans-serif;
+    }
+
+    #map{
+      width:100vw;
+      height:100vh;
+    }
+
+    .leaflet-popup-content-wrapper{
+      background:#111827;
+      color:white;
+      border-radius:16px;
+    }
+
+    .leaflet-popup-tip{
+      background:#111827;
+    }
+
+    .popup-title{
+      color:#ef4444;
+      font-size:18px;
+      font-weight:bold;
+      margin-bottom:10px;
+    }
+
+    .popup-item{
+      margin-bottom:8px;
+      color:#d1d5db;
+    }
+
+    .status{
+      color:#22c55e;
+      font-weight:bold;
+    }
+
+    .topbar{
+      position:absolute;
+      top:20px;
+      left:20px;
+      z-index:9999;
+
+      background:rgba(17,24,39,0.9);
+
+      border:1px solid #27272a;
+
+      padding:16px 20px;
+
+      border-radius:20px;
+
+      backdrop-filter:blur(10px);
+
+      color:white;
+
+      width:300px;
+
+      box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    .topbar h1{
+      font-size:24px;
+      margin-bottom:8px;
+    }
+
+    .topbar p{
+      color:#9ca3af;
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    @media(max-width:768px){
+
+      .topbar{
+        width:calc(100% - 40px);
+      }
+
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <!-- TOP CARD -->
+  <div class="topbar">
+
+    <h1>📍 DeviceGuard</h1>
+
+    <p>
+      Live stolen device tracking and real-time
+      GPS monitoring system.
+    </p>
+
+  </div>
+
+  <!-- MAP -->
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+
+    // ================= MAP =================
+    const map = L.map("map", {
+      zoomControl:true
+    }).setView([-1.286389, 36.817223], 7);
+
+    // ================= TILE =================
+    L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        attribution:"© OpenStreetMap contributors"
+      }
+    ).addTo(map);
+
+    // ================= ICON =================
+    const redIcon = L.icon({
+      iconUrl:
+        "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+
+      iconSize:[40,40],
+      iconAnchor:[20,40]
+    });
+
+    // ================= LOAD LOCATIONS =================
+    async function loadLocations(){
+
+      try{
+
+        const res = await fetch("/api/agent/map");
+
+        const data = await res.json();
+
+        console.log("📍 MAP DATA:", data);
+
+        // clear old markers
+        map.eachLayer(layer => {
+
+          if(layer instanceof L.Marker){
+            map.removeLayer(layer);
+          }
+
+        });
+
+        // add new markers
+        data.forEach(device => {
+
+          const marker = L.marker(
+            [
+              device.latitude,
+              device.longitude
+            ],
+            {
+              icon:redIcon
+            }
+          ).addTo(map);
+
+          marker.bindPopup(`
+
+            <div style="min-width:220px">
+
+              <div class="popup-title">
+                🚨 STOLEN DEVICE
+              </div>
+
+              <div class="popup-item">
+                <b>Machine ID:</b><br>
+                ${device.machine_id}
+              </div>
+
+              <div class="popup-item">
+                <b>Status:</b>
+                <span class="status">
+                  ${device.status}
+                </span>
+              </div>
+
+              <div class="popup-item">
+                <b>Latitude:</b>
+                ${device.latitude}
+              </div>
+
+              <div class="popup-item">
+                <b>Longitude:</b>
+                ${device.longitude}
+              </div>
+
+            </div>
+
+          `);
+
+        });
+
+      }catch(err){
+
+        console.error("❌ MAP ERROR:", err);
+
+      }
+
+    }
+
+    // ================= INITIAL LOAD =================
+    loadLocations();
+
+    // ================= AUTO REFRESH =================
+    setInterval(() => {
+
+      loadLocations();
+
+    }, 10000);
+
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>DeviceGuard Evidence Intelligence Map</title>
+
+  <!-- LEAFLET -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
+
+    #map {
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .popup-container {
+      width: 220px;
+    }
+
+    .popup-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #111;
+    }
+
+    .popup-info {
+      font-size: 14px;
+      margin-bottom: 6px;
+      color: #333;
+    }
+
+    .popup-img {
+      width: 100%;
+      border-radius: 10px;
+      margin-top: 10px;
+      border: 2px solid #ddd;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 16px;
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div id="map"></div>
+
+<!-- LEAFLET JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+  // ================= MAP =================
+  const map = L.map("map").setView(
+    [-1.286389, 36.817223],
+    12
+  );
+
+  // ================= TILES =================
+  L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      attribution: "© OpenStreetMap contributors"
+    }
+  ).addTo(map);
+
+  // ================= ICONS =================
+  const cameraIcon = L.icon({
+    iconUrl:
+      "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+
+    iconSize: [38, 38],
+    iconAnchor: [19, 38],
+  });
+
+  const screenshotIcon = L.icon({
+    iconUrl:
+      "https://maps.google.com/mapfiles/ms/icons/purple-dot.png",
+
+    iconSize: [38, 38],
+    iconAnchor: [19, 38],
+  });
+
+  // ================= FETCH EVIDENCE =================
+  fetch("/api/evidence/map")
+
+    .then((res) => res.json())
+
+    .then((data) => {
+
+      console.log("📸 Evidence map data:", data);
+
+      if (!data.length) {
+        alert("No evidence locations found.");
+      }
+
+      const bounds = [];
+
+      data.forEach((p) => {
+
+        if (!p.latitude || !p.longitude) return;
+
+        bounds.push([p.latitude, p.longitude]);
+
+        // ================= ICON TYPE =================
+        const selectedIcon =
+          p.type === "camera"
+            ? cameraIcon
+            : screenshotIcon;
+
+        // ================= IMAGE URL =================
+        const imageUrl =
+          `http://localhost:5050/uploads/evidence/${p.file_path}`;
+
+        // ================= POPUP =================
+        const popup = `
+
+          <div class="popup-container">
+
+            <div class="popup-title">
+              📸 Device Evidence
+            </div>
+
+            <div class="popup-info">
+              <b>Type:</b> ${p.type}
+            </div>
+
+            <div class="popup-info">
+              <b>Machine:</b><br>
+              ${p.machine_id}
+            </div>
+
+            <div class="popup-info">
+              <b>Captured:</b><br>
+              ${new Date(p.created_at).toLocaleString()}
+            </div>
+
+            <img
+              src="${imageUrl}"
+              class="popup-img"
+            />
+
+          </div>
+
+        `;
+
+        // ================= MARKER =================
+        L.marker(
+          [p.latitude, p.longitude],
+          { icon: selectedIcon }
+        )
+
+        .addTo(map)
+
+        .bindPopup(popup);
+
+      });
+
+      // ================= AUTO FIT =================
+      if (bounds.length > 0) {
+        map.fitBounds(bounds, {
+          padding: [50, 50]
+        });
+      }
+
+    })
+
+    .catch((err) => {
+
+      console.error(
+        "❌ Evidence map error:",
+        err
+      );
+
+    });
+
+</script>
+
+</body>
+</html>

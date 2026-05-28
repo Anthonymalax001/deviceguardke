@@ -1,0 +1,65 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+dashboard/node_modules/
+
+# =========================
+# Environment Variables
+# =========================
+.env
+.env.local
+.env.production
+dashboard/.env
+
+# =========================
+# Uploads / Generated Files
+# =========================
+uploads/
+temp/
+*.log
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =========================
+# Build Files
+# =========================
+dist/
+build/
+.next/
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Git
+# =========================
+.gitmodules
+
+# =========================
+# Large Files
+# =========================
+*.zip
+*.rar
+*.7z
+*.mp4
+*.mov
+*.iso
+*.exe
+
+python-agent/screenshots/
