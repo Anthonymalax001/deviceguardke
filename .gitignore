@@ -63,3 +63,5 @@ Thumbs.db
 *.exe
 
 python-agent/screenshots/
+# Local database backups
+backups/

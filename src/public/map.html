@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8" />
 
   <meta
@@ -17,226 +19,2876 @@
 
   <style>
 
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    body{
-      background:#000;
-      overflow:hidden;
-      font-family:Arial, Helvetica, sans-serif;
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
     }
 
-    #map{
-      width:100vw;
-      height:100vh;
+    #map {
+      width: 100vw;
+      height: 100vh;
     }
 
-    .leaflet-popup-content-wrapper{
-      background:#111827;
-      color:white;
-      border-radius:16px;
+    /* =====================================================
+       LOGIN
+       ===================================================== */
+
+    #loginOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 30000;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(2, 6, 23, 0.98),
+          rgba(15, 23, 42, 0.98)
+        );
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      padding: 20px;
     }
 
-    .leaflet-popup-tip{
-      background:#111827;
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+
+      background: #111827;
+      border: 1px solid #273244;
+
+      border-radius: 24px;
+
+      padding: 30px;
+
+      box-shadow:
+        0 25px 80px
+        rgba(0, 0, 0, 0.6);
     }
 
-    .popup-title{
-      color:#ef4444;
-      font-size:18px;
-      font-weight:bold;
-      margin-bottom:10px;
+    .login-logo {
+      width: 54px;
+      height: 54px;
+
+      border-radius: 16px;
+
+      background: #2563eb;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      font-size: 26px;
+
+      margin-bottom: 18px;
     }
 
-    .popup-item{
-      margin-bottom:8px;
-      color:#d1d5db;
+    .login-card h1 {
+      color: white;
+      font-size: 30px;
+      margin-bottom: 8px;
     }
 
-    .status{
-      color:#22c55e;
-      font-weight:bold;
+    .login-card p {
+      color: #94a3b8;
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 24px;
     }
 
-    .topbar{
-      position:absolute;
-      top:20px;
-      left:20px;
-      z-index:9999;
-
-      background:rgba(17,24,39,0.9);
-
-      border:1px solid #27272a;
-
-      padding:16px 20px;
-
-      border-radius:20px;
-
-      backdrop-filter:blur(10px);
-
-      color:white;
-
-      width:300px;
-
-      box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    .field {
+      margin-bottom: 16px;
     }
 
-    .topbar h1{
-      font-size:24px;
-      margin-bottom:8px;
+    .field label {
+      display: block;
+
+      color: #e5e7eb;
+
+      font-size: 13px;
+
+      font-weight: 600;
+
+      margin-bottom: 7px;
     }
 
-    .topbar p{
-      color:#9ca3af;
-      font-size:14px;
-      line-height:1.5;
+    .password-wrap {
+      position: relative;
+      width: 100%;
     }
 
-    @media(max-width:768px){
+    .password-wrap input {
+      padding-right: 72px;
+    }
 
-      .topbar{
-        width:calc(100% - 40px);
+    .field input {
+      width: 100%;
+
+      padding: 13px 14px;
+
+      border-radius: 12px;
+
+      border: 1px solid #334155;
+
+      background: #0f172a;
+
+      color: white;
+
+      outline: none;
+
+      font-size: 15px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      transform: translateY(-50%);
+
+      border: none;
+      background: transparent;
+      color: #94a3b8;
+      padding: 7px 6px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .password-toggle:hover {
+      background: #1e293b;
+      color: white;
+    }
+
+    .field input:focus {
+      border-color: #2563eb;
+
+      box-shadow:
+        0 0 0 3px
+        rgba(37, 99, 235, 0.15);
+    }
+
+    #loginButton {
+      width: 100%;
+
+      border: none;
+
+      background: #2563eb;
+
+      color: white;
+
+      padding: 14px;
+
+      border-radius: 12px;
+
+      font-size: 15px;
+
+      font-weight: bold;
+
+      cursor: pointer;
+    }
+
+    #loginButton:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    #loginError {
+      display: none;
+
+      margin-top: 14px;
+
+      color: #f87171;
+
+      font-size: 13px;
+
+      line-height: 1.4;
+    }
+
+    /* =====================================================
+       TOP CARD
+       ===================================================== */
+
+    .topbar {
+      position: absolute;
+
+      top: 20px;
+      left: 20px;
+
+      z-index: 9999;
+
+      width: 350px;
+
+      background:
+        rgba(17, 24, 39, 0.94);
+
+      border: 1px solid #27272a;
+
+      padding: 18px 20px;
+
+      border-radius: 20px;
+
+      backdrop-filter: blur(10px);
+
+      color: white;
+
+      box-shadow:
+        0 10px 30px
+        rgba(0, 0, 0, 0.5);
+    }
+
+    .topbar h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .topbar p {
+      color: #9ca3af;
+
+      font-size: 14px;
+
+      line-height: 1.5;
+
+      margin-bottom: 12px;
+    }
+
+    .topbar-row {
+      display: flex;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      gap: 10px;
+    }
+
+    .refresh-status {
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 7px;
+    }
+
+    .buttons button {
+      border: none;
+
+      background: #2563eb;
+
+      color: white;
+
+      padding: 8px 12px;
+
+      border-radius: 10px;
+
+      cursor: pointer;
+
+      font-weight: bold;
+    }
+
+    .buttons button:hover {
+      background: #1d4ed8;
+    }
+
+    .logout-button {
+      background: #374151 !important;
+    }
+
+    .logout-button:hover {
+      background: #4b5563 !important;
+    }
+
+    #errorMessage {
+      display: none;
+
+      margin-top: 10px;
+
+      color: #f87171;
+
+      font-size: 13px;
+
+      line-height: 1.4;
+    }
+
+    /* =====================================================
+       DEVICE INFO
+       ===================================================== */
+
+    #deviceInfo {
+      margin-top: 14px;
+
+      border-top: 1px solid #374151;
+
+      padding-top: 12px;
+
+      display: none;
+    }
+
+    .device-title {
+      color: white;
+
+      font-weight: bold;
+
+      font-size: 15px;
+
+      margin-bottom: 6px;
+    }
+
+    .device-line {
+      color: #94a3b8;
+
+      font-size: 12px;
+
+      margin-bottom: 5px;
+    }
+
+    /* =====================================================
+       HISTORY PANEL
+       ===================================================== */
+
+    #historyPanel {
+      position: absolute;
+
+      top: 20px;
+      right: 20px;
+
+      bottom: 20px;
+
+      width: 350px;
+
+      z-index: 9999;
+
+      background:
+        rgba(15, 23, 42, 0.95);
+
+      border:
+        1px solid #273244;
+
+      border-radius: 20px;
+
+      color: white;
+
+      display: flex;
+
+      flex-direction: column;
+
+      overflow: hidden;
+
+      backdrop-filter: blur(10px);
+
+      box-shadow:
+        0 10px 30px
+        rgba(0, 0, 0, 0.5);
+    }
+
+    .history-header {
+      padding: 18px 20px;
+
+      border-bottom:
+        1px solid #273244;
+    }
+
+    .history-header h2 {
+      font-size: 20px;
+
+      margin-bottom: 5px;
+    }
+
+    .history-header p {
+      color: #94a3b8;
+
+      font-size: 12px;
+
+      line-height: 1.4;
+    }
+
+    .history-stats {
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, 1fr);
+
+      gap: 8px;
+
+      padding: 12px 14px;
+
+      border-bottom:
+        1px solid #273244;
+    }
+
+    .stat {
+      background: #111827;
+
+      border:
+        1px solid #273244;
+
+      border-radius: 12px;
+
+      padding: 10px;
+    }
+
+    .stat-label {
+      color: #94a3b8;
+
+      font-size: 11px;
+
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      color: white;
+
+      font-size: 13px;
+
+      font-weight: bold;
+    }
+
+
+    .movement-stats {
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, 1fr);
+
+      gap: 8px;
+
+      padding: 0 14px 12px 14px;
+
+      border-bottom: 1px solid #273244;
+    }
+
+    .movement-card {
+      background: #111827;
+
+      border: 1px solid #273244;
+
+      border-radius: 12px;
+
+      padding: 10px;
+
+      min-width: 0;
+    }
+
+    .movement-label {
+      color: #94a3b8;
+
+      font-size: 10px;
+
+      margin-bottom: 4px;
+
+      white-space: nowrap;
+
+      overflow: hidden;
+
+      text-overflow: ellipsis;
+    }
+
+    .movement-value {
+      color: white;
+
+      font-size: 13px;
+
+      font-weight: bold;
+    }
+
+    #historyList {
+      flex: 1;
+
+      overflow-y: auto;
+
+      padding: 10px;
+    }
+
+    .history-empty {
+      color: #94a3b8;
+
+      font-size: 13px;
+
+      text-align: center;
+
+      padding: 30px 15px;
+    }
+
+    .history-item {
+      position: relative;
+
+      padding: 13px 12px 13px 16px;
+
+      margin-bottom: 8px;
+
+      background: #111827;
+
+      border:
+        1px solid #273244;
+
+      border-radius: 14px;
+
+      cursor: pointer;
+
+      transition:
+        0.15s ease;
+    }
+
+    .history-item:hover {
+      border-color: #3b82f6;
+
+      transform: translateY(-1px);
+    }
+
+    .history-item.latest {
+      border-color: #ef4444;
+
+      background:
+        rgba(127, 29, 29, 0.18);
+    }
+
+    .history-dot {
+      position: absolute;
+
+      left: 6px;
+
+      top: 18px;
+
+      width: 7px;
+
+      height: 7px;
+
+      border-radius: 50%;
+
+      background: #60a5fa;
+    }
+
+    .history-item.latest
+    .history-dot {
+      background: #ef4444;
+    }
+
+    .history-time {
+      color: white;
+
+      font-size: 13px;
+
+      font-weight: bold;
+
+      margin-left: 7px;
+
+      margin-bottom: 5px;
+    }
+
+    .history-location {
+      color: #cbd5e1;
+
+      font-size: 12px;
+
+      margin-left: 7px;
+
+      margin-bottom: 5px;
+    }
+
+    .history-coordinates {
+      color: #64748b;
+
+      font-size: 11px;
+
+      margin-left: 7px;
+    }
+
+    .history-badge {
+      display: inline-block;
+
+      margin-left: 7px;
+
+      margin-top: 7px;
+
+      padding: 3px 7px;
+
+      border-radius: 999px;
+
+      background: #991b1b;
+
+      color: white;
+
+      font-size: 9px;
+
+      font-weight: bold;
+    }
+
+    /* =====================================================
+       MAP EMPTY
+       ===================================================== */
+
+    .empty {
+      position: absolute;
+
+      left: 50%;
+      top: 50%;
+
+      transform:
+        translate(-50%, -50%);
+
+      z-index: 9998;
+
+      background:
+        rgba(17, 24, 39, 0.95);
+
+      color: white;
+
+      padding: 24px;
+
+      border-radius: 18px;
+
+      text-align: center;
+
+      display: none;
+
+      box-shadow:
+        0 10px 30px
+        rgba(0, 0, 0, 0.5);
+    }
+
+    /* =====================================================
+       POPUP
+       ===================================================== */
+
+    .leaflet-popup-content-wrapper {
+      background: #111827;
+      color: white;
+      border-radius: 16px;
+    }
+
+    .leaflet-popup-tip {
+      background: #111827;
+    }
+
+    .popup-title {
+      color: #ef4444;
+
+      font-size: 18px;
+
+      font-weight: bold;
+
+      margin-bottom: 12px;
+    }
+
+    .popup-item {
+      margin-bottom: 8px;
+
+      color: #d1d5db;
+
+      line-height: 1.4;
+    }
+
+    /* =====================================================
+       MOBILE — DEDICATED THREE-SECTION LAYOUT
+       ===================================================== */
+
+    @media (max-width: 900px) {
+
+      :root {
+        --mobile-header: 108px;
+        --mobile-history: min(330px, 43dvh);
       }
 
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        min-height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        background: #020617;
+      }
+
+      /* The map gets its OWN area.
+         Nothing is allowed to sit on top of it. */
+      #map {
+        position: absolute;
+        top: var(--mobile-header);
+        left: 0;
+        right: 0;
+        bottom: var(--mobile-history);
+        width: 100%;
+        height: auto;
+        z-index: 1;
+      }
+
+      /* Compact mobile header */
+      .topbar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: var(--mobile-header);
+        max-height: none;
+        overflow: hidden;
+        box-sizing: border-box;
+        padding: 11px 14px 9px;
+        border-radius: 0 0 20px 20px;
+        border-left: 0;
+        border-right: 0;
+        border-top: 0;
+        z-index: 9999;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
+      }
+
+      .topbar h1 {
+        font-size: 19px;
+        line-height: 1.1;
+        margin: 0 0 4px;
+      }
+
+      /* Keep the header clean on a small screen. */
+      .topbar > p {
+        display: none;
+      }
+
+      .topbar-row {
+        gap: 8px;
+        min-height: 28px;
+      }
+
+      .refresh-status {
+        min-width: 0;
+        font-size: 10px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .buttons {
+        gap: 6px;
+        flex-shrink: 0;
+      }
+
+      .buttons button {
+        padding: 6px 9px;
+        font-size: 10px;
+        border-radius: 8px;
+      }
+
+      /* Hide the long EAT note in the compact header. */
+      .topbar > div[style*="GPS timestamps"] {
+        display: none !important;
+      }
+
+      #deviceInfo {
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid rgba(55, 65, 81, 0.85);
+      }
+
+      .device-title {
+        font-size: 12px;
+        line-height: 1.2;
+        margin-bottom: 3px;
+      }
+
+      .device-line {
+        font-size: 9px;
+        line-height: 1.2;
+        margin-bottom: 2px;
+        overflow-wrap: anywhere;
+      }
+
+      #errorMessage {
+        margin-top: 4px;
+        font-size: 9px;
+        line-height: 1.2;
+      }
+
+      /* Bottom sheet gets its OWN area, below the map. */
+      #historyPanel {
+        position: absolute;
+        top: auto;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        height: var(--mobile-history);
+        min-height: 0;
+        max-height: none;
+        box-sizing: border-box;
+        border-radius: 20px 20px 0 0;
+        border-left: 0;
+        border-right: 0;
+        border-bottom: 0;
+        z-index: 9999;
+        box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.45);
+      }
+
+      .history-header {
+        padding: 10px 14px 8px;
+      }
+
+      .history-header h2 {
+        font-size: 15px;
+        line-height: 1.15;
+        margin-bottom: 2px;
+      }
+
+      .history-header p {
+        font-size: 9px;
+        line-height: 1.25;
+      }
+
+      .history-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        padding: 7px 10px;
+      }
+
+      .stat {
+        padding: 7px 8px;
+        border-radius: 9px;
+      }
+
+      .stat-label {
+        font-size: 8px;
+        margin-bottom: 2px;
+      }
+
+      .stat-value {
+        font-size: 10px;
+        line-height: 1.15;
+      }
+
+      .movement-stats {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
+        padding: 6px 10px 7px;
+      }
+
+      .movement-card {
+        padding: 7px 6px;
+        border-radius: 9px;
+        min-width: 0;
+      }
+
+      .movement-label {
+        font-size: 7px;
+        line-height: 1.15;
+        margin-bottom: 2px;
+        white-space: normal;
+      }
+
+      .movement-value {
+        font-size: 9px;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+      }
+
+      #historyList {
+        min-height: 0;
+        padding: 7px 9px 10px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .history-empty {
+        font-size: 10px;
+        padding: 20px 10px;
+      }
+
+      .history-item {
+        padding: 9px 9px 9px 14px;
+        margin-bottom: 6px;
+        border-radius: 10px;
+      }
+
+      .history-dot {
+        left: 5px;
+        top: 13px;
+        width: 6px;
+        height: 6px;
+      }
+
+      .history-time {
+        font-size: 10px;
+        margin-left: 6px;
+        margin-bottom: 3px;
+      }
+
+      .history-location {
+        font-size: 9px;
+        margin-left: 6px;
+        margin-bottom: 3px;
+      }
+
+      .history-coordinates {
+        font-size: 8px;
+        margin-left: 6px;
+      }
+
+      .history-badge {
+        font-size: 7px;
+        margin-left: 4px;
+        margin-top: 3px;
+      }
+
+      /* Empty-history message stays centered inside the map area. */
+      .empty {
+        top: calc(var(--mobile-header) + ((100dvh - var(--mobile-header) - var(--mobile-history)) / 2));
+        max-width: calc(100% - 36px);
+        box-sizing: border-box;
+        padding: 18px;
+        border-radius: 15px;
+      }
+
+      .leaflet-control-zoom {
+        margin-top: 8px !important;
+        margin-right: 8px !important;
+      }
+    }
+
+    @media (max-width: 480px) {
+
+      :root {
+        --mobile-header: 104px;
+        --mobile-history: min(310px, 44dvh);
+      }
+
+      .topbar {
+        padding: 10px 12px 8px;
+        border-radius: 0 0 18px 18px;
+      }
+
+      .topbar h1 {
+        font-size: 18px;
+      }
+
+      .buttons button {
+        padding: 6px 8px;
+        font-size: 9px;
+      }
+
+      .refresh-status {
+        font-size: 9px;
+      }
+
+      #deviceInfo {
+        margin-top: 5px;
+        padding-top: 5px;
+      }
+
+      .device-title {
+        font-size: 11px;
+      }
+
+      .device-line {
+        font-size: 8px;
+      }
+
+      #historyPanel {
+        border-radius: 18px 18px 0 0;
+      }
+
+      .history-header {
+        padding: 9px 12px 7px;
+      }
+
+      .history-header h2 {
+        font-size: 14px;
+      }
+
+      .history-header p {
+        font-size: 8px;
+      }
+
+      .history-stats {
+        padding: 6px 8px;
+        gap: 5px;
+      }
+
+      .movement-stats {
+        gap: 4px;
+        padding: 5px 8px 6px;
+      }
+
+      .movement-card {
+        padding: 6px 5px;
+      }
+
+      .movement-label {
+        font-size: 6.5px;
+      }
+
+      .movement-value {
+        font-size: 8px;
+      }
+
+      #historyList {
+        padding: 6px 8px 9px;
+      }
     }
 
   </style>
+
 </head>
 
 <body>
 
-  <!-- TOP CARD -->
+  <!-- =====================================================
+       LOGIN
+       ===================================================== -->
+
+  <div id="loginOverlay">
+
+    <div class="login-card">
+
+      <div class="login-logo">
+        📍
+      </div>
+
+      <h1>
+        DeviceGuard
+      </h1>
+
+      <p>
+        Sign in to access your protected
+        devices and live location tracking.
+      </p>
+
+      <form id="loginForm">
+
+        <div class="field">
+
+          <label for="email">
+            Email
+          </label>
+
+          <input
+            id="email"
+            type="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          />
+
+        </div>
+
+        <div class="field">
+
+          <label for="password">
+            Password
+          </label>
+
+          <div class="password-wrap">
+
+            <input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+            />
+
+            <button
+              id="passwordToggle"
+              class="password-toggle"
+              type="button"
+              aria-label="Show password"
+            >
+              Show
+            </button>
+
+          </div>
+
+        </div>
+
+        <button
+          id="loginButton"
+          type="submit"
+        >
+          Login to DeviceGuard
+        </button>
+
+        <div id="loginError"></div>
+
+      </form>
+
+    </div>
+
+  </div>
+
+  <!-- =====================================================
+       TOPBAR
+       ===================================================== -->
+
   <div class="topbar">
 
-    <h1>📍 DeviceGuard</h1>
+    <h1>
+      📍 DeviceGuard
+    </h1>
 
     <p>
-      Live stolen device tracking and real-time
-      GPS monitoring system.
+      Live stolen-device tracking,
+      GPS history and movement.
+    </p>
+
+    <div class="topbar-row">
+
+      <span
+        id="refreshStatus"
+        class="refresh-status"
+      >
+        Waiting...
+      </span>
+
+      <div class="buttons">
+
+        <button onclick="loadEverything()">
+          Refresh
+        </button>
+
+        <button
+          class="logout-button"
+          onclick="logout()"
+        >
+          Logout
+        </button>
+
+      </div>
+
+    </div>
+
+    <div
+      style="
+        margin-top: 8px;
+        color: #64748b;
+        font-size: 11px;
+      "
+    >
+      GPS timestamps are displayed in Kenya time (EAT).
+    </div>
+
+    <div id="deviceInfo">
+
+      <div
+        id="deviceTitle"
+        class="device-title"
+      >
+        Device
+      </div>
+
+      <div
+        id="deviceMachine"
+        class="device-line"
+      >
+        Machine ID:
+      </div>
+
+      <div
+        id="deviceStatus"
+        class="device-line"
+      >
+        Status:
+      </div>
+
+    </div>
+
+    <div id="errorMessage"></div>
+
+  </div>
+
+  <!-- =====================================================
+       HISTORY PANEL
+       ===================================================== -->
+
+  <div id="historyPanel">
+
+    <div class="history-header">
+
+      <h2>
+        📍 Location History
+      </h2>
+
+      <p>
+        Click any location to view it
+        on the map.
+      </p>
+
+    </div>
+
+    <div class="history-stats">
+
+      <div class="stat">
+
+        <div class="stat-label">
+          Points
+        </div>
+
+        <div
+          id="pointCount"
+          class="stat-value"
+        >
+          0
+        </div>
+
+      </div>
+
+      <div class="stat">
+
+        <div class="stat-label">
+          Last GPS
+        </div>
+
+        <div
+          id="latestTime"
+          class="stat-value"
+        >
+          -
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="movement-stats">
+
+      <div class="movement-card">
+
+        <div class="movement-label">
+          Total distance
+        </div>
+
+        <div
+          id="totalDistance"
+          class="movement-value"
+        >
+          0 m
+        </div>
+
+      </div>
+
+      <div class="movement-card">
+
+        <div class="movement-label">
+          Displacement
+        </div>
+
+        <div
+          id="displacement"
+          class="movement-value"
+        >
+          0 m
+        </div>
+
+      </div>
+
+      <div class="movement-card">
+
+        <div class="movement-label">
+          Tracking duration
+        </div>
+
+        <div
+          id="trackingDuration"
+          class="movement-value"
+        >
+          0 min
+        </div>
+
+      </div>
+
+      <div class="movement-card">
+
+        <div class="movement-label">
+          Avg. observed speed
+        </div>
+
+        <div
+          id="averageSpeed"
+          class="movement-value"
+        >
+          0.0 km/h
+        </div>
+
+      </div>
+
+    </div>
+
+    <div id="historyList">
+
+      <div class="history-empty">
+        Loading location history...
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- =====================================================
+       EMPTY MAP
+       ===================================================== -->
+
+  <div
+    id="emptyMessage"
+    class="empty"
+  >
+
+    <h2>
+      📍 No location history
+    </h2>
+
+    <p
+      style="
+        margin-top:8px;
+        color:#9ca3af;
+      "
+    >
+      DeviceGuard has not received
+      GPS history yet.
     </p>
 
   </div>
 
-  <!-- MAP -->
   <div id="map"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  ></script>
 
   <script>
 
-    // ================= MAP =================
-    const map = L.map("map", {
-      zoomControl:true
-    }).setView([-1.286389, 36.817223], 7);
+    // ======================================================
+    // MAP
+    // ======================================================
 
-    // ================= TILE =================
+    const map =
+      L.map("map", {
+        zoomControl: true
+      })
+      .setView(
+        [-1.286389, 36.817223],
+        7
+      );
+
     L.tileLayer(
       "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
       {
-        attribution:"© OpenStreetMap contributors"
+        attribution:
+          "© OpenStreetMap contributors"
       }
     ).addTo(map);
 
-    // ================= ICON =================
-    const redIcon = L.icon({
-      iconUrl:
-        "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+    // ======================================================
+    // ICONS
+    // ======================================================
 
-      iconSize:[40,40],
-      iconAnchor:[20,40]
-    });
+    const redIcon =
+      L.icon({
 
-    // ================= LOAD LOCATIONS =================
-    async function loadLocations(){
+        iconUrl:
+          "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
 
-      try{
+        iconSize: [
+          40,
+          40
+        ],
 
-        const res = await fetch("/api/agent/map");
+        iconAnchor: [
+          20,
+          40
+        ]
 
-        const data = await res.json();
+      });
 
-        console.log("📍 MAP DATA:", data);
+    const blueIcon =
+      L.icon({
 
-        // clear old markers
-        map.eachLayer(layer => {
+        iconUrl:
+          "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
 
-          if(layer instanceof L.Marker){
-            map.removeLayer(layer);
+        iconSize: [
+          40,
+          40
+        ],
+
+        iconAnchor: [
+          20,
+          40
+        ]
+
+      });
+
+    // ======================================================
+    // STATE
+    // ======================================================
+
+    let routeLine =
+      null;
+
+    let historyMarkers =
+      [];
+
+    let currentMarker =
+      null;
+
+    let currentHistory =
+      [];
+
+    // ======================================================
+    // ELEMENTS
+    // ======================================================
+
+    const loginOverlay =
+      document.getElementById(
+        "loginOverlay"
+      );
+
+    const loginForm =
+      document.getElementById(
+        "loginForm"
+      );
+
+    const passwordInput =
+      document.getElementById(
+        "password"
+      );
+
+    const passwordToggle =
+      document.getElementById(
+        "passwordToggle"
+      );
+
+    passwordToggle.addEventListener(
+      "click",
+      () => {
+
+        const showing =
+          passwordInput.type === "text";
+
+        passwordInput.type =
+          showing
+            ? "password"
+            : "text";
+
+        passwordToggle.textContent =
+          showing
+            ? "Show"
+            : "Hide";
+
+        passwordToggle.setAttribute(
+          "aria-label",
+          showing
+            ? "Show password"
+            : "Hide password"
+        );
+      }
+    );
+
+    const loginButton =
+      document.getElementById(
+        "loginButton"
+      );
+
+    const loginError =
+      document.getElementById(
+        "loginError"
+      );
+
+    const refreshStatus =
+      document.getElementById(
+        "refreshStatus"
+      );
+
+    const errorMessage =
+      document.getElementById(
+        "errorMessage"
+      );
+
+    const emptyMessage =
+      document.getElementById(
+        "emptyMessage"
+      );
+
+    const historyList =
+      document.getElementById(
+        "historyList"
+      );
+
+    // ======================================================
+    // AUTH
+    // ======================================================
+
+    function getToken() {
+
+      return localStorage.getItem(
+        "deviceguard_token"
+      );
+    }
+
+    function saveToken(token) {
+
+      localStorage.setItem(
+        "deviceguard_token",
+        token
+      );
+    }
+
+    function clearToken() {
+
+      localStorage.removeItem(
+        "deviceguard_token"
+      );
+
+      localStorage.removeItem(
+        "deviceguard_email"
+      );
+    }
+
+    function logout() {
+
+      clearToken();
+
+      clearMap();
+
+      historyList.innerHTML =
+        `
+        <div class="history-empty">
+          Please login to view history.
+        </div>
+        `;
+
+      loginOverlay.style.display =
+        "flex";
+
+      refreshStatus.textContent =
+        "Login required";
+    }
+
+    // ======================================================
+    // LOGIN
+    // ======================================================
+
+    loginForm.addEventListener(
+      "submit",
+      async event => {
+
+        event.preventDefault();
+
+        const email =
+          document
+            .getElementById(
+              "email"
+            )
+            .value
+            .trim();
+
+        const password =
+          document
+            .getElementById(
+              "password"
+            )
+            .value;
+
+        loginError.style.display =
+          "none";
+
+        loginButton.disabled =
+          true;
+
+        loginButton.textContent =
+          "Logging in...";
+
+        try {
+
+          const response =
+            await fetch(
+              "/api/auth/login",
+              {
+                method: "POST",
+
+                headers: {
+                  "Content-Type":
+                    "application/json",
+
+                  "Accept":
+                    "application/json"
+                },
+
+                body:
+                  JSON.stringify({
+                    email,
+                    password
+                  })
+              }
+            );
+
+          const data =
+            await response.json();
+
+          if (!response.ok) {
+
+            throw new Error(
+              data.error ||
+              "Login failed"
+            );
           }
 
-        });
+          if (!data.token) {
 
-        // add new markers
-        data.forEach(device => {
+            throw new Error(
+              "No token returned"
+            );
+          }
 
-          const marker = L.marker(
-            [
-              device.latitude,
-              device.longitude
-            ],
+          saveToken(
+            data.token
+          );
+
+          localStorage.setItem(
+            "deviceguard_email",
+            email
+          );
+
+          loginOverlay.style.display =
+            "none";
+
+          await loadEverything();
+
+        } catch (error) {
+
+          console.error(
+            "❌ LOGIN ERROR:",
+            error
+          );
+
+          loginError.textContent =
+            error.message ||
+            "Login failed";
+
+          loginError.style.display =
+            "block";
+
+        } finally {
+
+          loginButton.disabled =
+            false;
+
+          loginButton.textContent =
+            "Login to DeviceGuard";
+        }
+
+      }
+    );
+
+    // ======================================================
+    // FORMAT TIME
+    // ======================================================
+
+    // ======================================================
+    // KENYA / EAST AFRICA TIME
+    // ======================================================
+
+    const DEVICEGUARD_TIMEZONE =
+      "Africa/Nairobi";
+
+    function parseServerDate(value) {
+
+      if (!value) {
+        return null;
+      }
+
+      const date =
+        new Date(value);
+
+      if (
+        Number.isNaN(
+          date.getTime()
+        )
+      ) {
+
+        return null;
+      }
+
+      return date;
+    }
+
+    function formatTime(value) {
+
+      const date =
+        parseServerDate(value);
+
+      if (!date) {
+        return "Unknown";
+      }
+
+      return new Intl.DateTimeFormat(
+        "en-KE",
+        {
+          timeZone:
+            DEVICEGUARD_TIMEZONE,
+          year: "numeric",
+          month: "numeric",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+          timeZoneName: "short"
+        }
+      ).format(date);
+    }
+
+    function formatShortTime(value) {
+
+      const date =
+        parseServerDate(value);
+
+      if (!date) {
+        return "-";
+      }
+
+      return new Intl.DateTimeFormat(
+        "en-KE",
+        {
+          timeZone:
+            DEVICEGUARD_TIMEZONE,
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true
+        }
+      ).format(date) + " EAT";
+    }
+
+    function formatNowNairobi() {
+
+      return new Intl.DateTimeFormat(
+        "en-KE",
+        {
+          timeZone:
+            DEVICEGUARD_TIMEZONE,
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true
+        }
+      ).format(new Date()) + " EAT";
+    }
+
+    // ======================================================
+    // CLEAR MAP
+    // ======================================================
+
+    function clearMap() {
+
+      if (routeLine) {
+
+        map.removeLayer(
+          routeLine
+        );
+
+        routeLine =
+          null;
+      }
+
+      historyMarkers.forEach(
+        marker => {
+
+          map.removeLayer(
+            marker
+          );
+        }
+      );
+
+      historyMarkers =
+        [];
+
+      if (currentMarker) {
+
+        map.removeLayer(
+          currentMarker
+        );
+
+        currentMarker =
+          null;
+      }
+    }
+
+    // ======================================================
+    // DEVICE DATA
+    // ======================================================
+
+    async function loadDevice() {
+
+      const token =
+        getToken();
+
+      const response =
+        await fetch(
+          "/api/dashboard/map",
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+
+              Accept:
+                "application/json"
+            }
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
+
+        clearToken();
+
+        loginOverlay.style.display =
+          "flex";
+
+        throw new Error(
+          "Login session expired"
+        );
+      }
+
+      if (!response.ok) {
+
+        throw new Error(
+          data.error ||
+          "Unable to load device"
+        );
+      }
+
+      return data;
+    }
+
+    // ======================================================
+    // HISTORY API
+    // ======================================================
+
+    async function loadHistory(
+      machineId
+    ) {
+
+      const token =
+        getToken();
+
+      const response =
+        await fetch(
+          `/api/dashboard/history/${encodeURIComponent(machineId)}`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+
+              Accept:
+                "application/json"
+            }
+          }
+        );
+
+      const data =
+        await response.json();
+
+      if (
+        response.status === 401 ||
+        response.status === 403
+      ) {
+
+        clearToken();
+
+        loginOverlay.style.display =
+          "flex";
+
+        throw new Error(
+          "Login session expired"
+        );
+      }
+
+      if (!response.ok) {
+
+        throw new Error(
+          data.error ||
+          "Unable to load location history"
+        );
+      }
+
+      return data;
+    }
+
+    // ======================================================
+    // MOVEMENT INTELLIGENCE
+    // ======================================================
+
+    function calculateDistanceKm(
+      lat1,
+      lon1,
+      lat2,
+      lon2
+    ) {
+
+      const earthRadiusKm = 6371;
+
+      const dLat =
+        (lat2 - lat1) *
+        Math.PI /
+        180;
+
+      const dLon =
+        (lon2 - lon1) *
+        Math.PI /
+        180;
+
+      const a =
+        Math.sin(dLat / 2) *
+        Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) *
+        Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+      const c =
+        2 *
+        Math.atan2(
+          Math.sqrt(a),
+          Math.sqrt(1 - a)
+        );
+
+      return earthRadiusKm * c;
+    }
+
+    function formatDistance(km) {
+
+      if (!Number.isFinite(km)) {
+        return "0 m";
+      }
+
+      if (km < 1) {
+        return `${Math.round(km * 1000)} m`;
+      }
+
+      return `${km.toFixed(2)} km`;
+    }
+
+    function formatDuration(milliseconds) {
+
+      if (
+        !Number.isFinite(milliseconds) ||
+        milliseconds <= 0
+      ) {
+        return "0 min";
+      }
+
+      const totalMinutes =
+        Math.round(
+          milliseconds / 60000
+        );
+
+      if (totalMinutes < 60) {
+        return `${totalMinutes} min`;
+      }
+
+      const hours =
+        Math.floor(
+          totalMinutes / 60
+        );
+
+      const minutes =
+        totalMinutes % 60;
+
+      return `${hours}h ${minutes}m`;
+    }
+
+    function getMovementStats(locations) {
+
+      if (
+        !Array.isArray(locations) ||
+        locations.length === 0
+      ) {
+        return {
+          totalDistanceKm: 0,
+          displacementKm: 0,
+          durationMs: 0,
+          averageSpeedKmh: 0
+        };
+      }
+
+      const validLocations =
+        locations
+          .map(location => ({
+            latitude: Number(location.latitude),
+            longitude: Number(location.longitude),
+            time: new Date(location.created_at).getTime()
+          }))
+          .filter(point =>
+            Number.isFinite(point.latitude) &&
+            Number.isFinite(point.longitude) &&
+            Number.isFinite(point.time)
+          )
+          .sort((a, b) => a.time - b.time);
+
+      if (validLocations.length === 0) {
+        return {
+          totalDistanceKm: 0,
+          displacementKm: 0,
+          durationMs: 0,
+          averageSpeedKmh: 0
+        };
+      }
+
+      let totalDistanceKm = 0;
+
+      for (
+        let i = 1;
+        i < validLocations.length;
+        i++
+      ) {
+
+        const previous =
+          validLocations[i - 1];
+
+        const current =
+          validLocations[i];
+
+        totalDistanceKm +=
+          calculateDistanceKm(
+            previous.latitude,
+            previous.longitude,
+            current.latitude,
+            current.longitude
+          );
+      }
+
+      const first =
+        validLocations[0];
+
+      const latest =
+        validLocations[
+          validLocations.length - 1
+        ];
+
+      const displacementKm =
+        calculateDistanceKm(
+          first.latitude,
+          first.longitude,
+          latest.latitude,
+          latest.longitude
+        );
+
+      const durationMs =
+        Math.max(
+          0,
+          latest.time - first.time
+        );
+
+      const durationHours =
+        durationMs / 3600000;
+
+      const averageSpeedKmh =
+        durationHours > 0
+          ? totalDistanceKm / durationHours
+          : 0;
+
+      return {
+        totalDistanceKm,
+        displacementKm,
+        durationMs,
+        averageSpeedKmh
+      };
+    }
+
+    function renderMovementStats(locations) {
+
+      const stats =
+        getMovementStats(
+          locations
+        );
+
+      document.getElementById(
+        "totalDistance"
+      ).textContent =
+        formatDistance(
+          stats.totalDistanceKm
+        );
+
+      document.getElementById(
+        "displacement"
+      ).textContent =
+        formatDistance(
+          stats.displacementKm
+        );
+
+      document.getElementById(
+        "trackingDuration"
+      ).textContent =
+        formatDuration(
+          stats.durationMs
+        );
+
+      document.getElementById(
+        "averageSpeed"
+      ).textContent =
+        `${stats.averageSpeedKmh.toFixed(1)} km/h`;
+    }
+
+    // ======================================================
+    // BUILD TIMELINE
+    // ======================================================
+
+    function renderTimeline(
+      locations
+    ) {
+
+      historyList.innerHTML =
+        "";
+
+      if (
+        !locations ||
+        locations.length === 0
+      ) {
+
+        historyList.innerHTML =
+          `
+          <div class="history-empty">
+            No GPS records yet.
+          </div>
+          `;
+
+        return;
+      }
+
+      document.getElementById(
+        "pointCount"
+      ).textContent =
+        locations.length;
+
+      document.getElementById(
+        "latestTime"
+      ).textContent =
+        formatShortTime(
+          locations[
+            locations.length - 1
+          ].created_at
+        );
+
+      // Newest first in timeline.
+      const newestFirst =
+        [...locations]
+          .reverse();
+
+      newestFirst.forEach(
+        (location, reversedIndex) => {
+
+          const originalIndex =
+            locations.length -
+            1 -
+            reversedIndex;
+
+          const isLatest =
+            originalIndex ===
+            locations.length - 1;
+
+          const latitude =
+            Number(
+              location.latitude
+            );
+
+          const longitude =
+            Number(
+              location.longitude
+            );
+
+          const item =
+            document.createElement(
+              "div"
+            );
+
+          item.className =
+            `history-item ${
+              isLatest
+                ? "latest"
+                : ""
+            }`;
+
+          item.innerHTML =
+            `
+            <div
+              class="history-dot"
+            ></div>
+
+            <div
+              class="history-time"
+            >
+              ${formatTime(
+                location.created_at
+              )}
+            </div>
+
+            <div
+              class="history-location"
+            >
+              ${
+                location.city ||
+                "Unknown city"
+              },
+              ${
+                location.country ||
+                "Unknown country"
+              }
+            </div>
+
+            <div
+              class="history-coordinates"
+            >
+              ${latitude},
+              ${longitude}
+            </div>
+
+            ${
+              isLatest
+                ? `
+                  <span
+                    class="history-badge"
+                  >
+                    CURRENT
+                  </span>
+                `
+                : ""
+            }
+            `;
+
+          item.addEventListener(
+            "click",
+            () => {
+
+              focusHistoryPoint(
+                originalIndex
+              );
+            }
+          );
+
+          historyList.appendChild(
+            item
+          );
+
+        }
+      );
+
+    }
+
+    // ======================================================
+    // FOCUS TIMELINE POINT
+    // ======================================================
+
+    function focusHistoryPoint(
+      index
+    ) {
+
+      const location =
+        currentHistory[index];
+
+      if (!location) {
+
+        return;
+      }
+
+      const lat =
+        Number(
+          location.latitude
+        );
+
+      const lng =
+        Number(
+          location.longitude
+        );
+
+      if (
+        !Number.isFinite(lat) ||
+        !Number.isFinite(lng)
+      ) {
+
+        return;
+      }
+
+      map.setView(
+        [lat, lng],
+        17,
+        {
+          animate: true
+        }
+      );
+
+      const marker =
+        historyMarkers[index];
+
+      if (marker) {
+
+        marker.openPopup();
+      }
+
+    }
+
+    // ======================================================
+    // DRAW HISTORY
+    // ======================================================
+
+    function drawHistory(
+      locations
+    ) {
+
+      clearMap();
+
+      currentHistory =
+        locations || [];
+
+      renderMovementStats(
+        currentHistory
+      );
+
+      if (
+        currentHistory.length === 0
+      ) {
+
+        emptyMessage.style.display =
+          "block";
+
+        renderTimeline([]);
+
+        return;
+      }
+
+      emptyMessage.style.display =
+        "none";
+
+      renderTimeline(
+        currentHistory
+      );
+
+      const coordinates =
+        [];
+
+      // ====================================================
+      // DRAW HISTORY MARKERS
+      // ====================================================
+
+      currentHistory.forEach(
+        (location, index) => {
+
+          const lat =
+            Number(
+              location.latitude
+            );
+
+          const lng =
+            Number(
+              location.longitude
+            );
+
+          if (
+            !Number.isFinite(lat) ||
+            !Number.isFinite(lng)
+          ) {
+
+            historyMarkers.push(
+              null
+            );
+
+            return;
+          }
+
+          coordinates.push([
+            lat,
+            lng
+          ]);
+
+          const isLatest =
+            index ===
+            currentHistory.length - 1;
+
+          const marker =
+            L.marker(
+              [lat, lng],
+              {
+                icon:
+                  isLatest
+                    ? redIcon
+                    : blueIcon
+              }
+            ).addTo(map);
+
+          marker.bindPopup(`
+            <div
+              style="
+                min-width:240px;
+              "
+            >
+
+              <div
+                class="popup-title"
+                style="
+                  color:
+                    ${
+                      isLatest
+                        ? "#ef4444"
+                        : "#60a5fa"
+                    };
+                "
+              >
+
+                ${
+                  isLatest
+                    ? "📍 LATEST LOCATION"
+                    : "🕒 LOCATION HISTORY"
+                }
+
+              </div>
+
+              <div
+                class="popup-item"
+              >
+                <b>Machine ID:</b><br>
+                ${
+                  location.machine_id ||
+                  "Unknown"
+                }
+              </div>
+
+              <div
+                class="popup-item"
+              >
+                <b>Location:</b>
+                ${
+                  location.city ||
+                  "Unknown"
+                },
+                ${
+                  location.country ||
+                  "Unknown"
+                }
+              </div>
+
+              <div
+                class="popup-item"
+              >
+                <b>Latitude:</b>
+                ${lat}
+              </div>
+
+              <div
+                class="popup-item"
+              >
+                <b>Longitude:</b>
+                ${lng}
+              </div>
+
+              <div
+                class="popup-item"
+              >
+                <b>Captured:</b><br>
+                ${
+                  formatTime(
+                    location.created_at
+                  )
+                }
+              </div>
+
+              <div
+                class="popup-item"
+              >
+                <b>History point:</b>
+                ${index + 1}
+                of
+                ${currentHistory.length}
+              </div>
+
+            </div>
+          `);
+
+          historyMarkers[
+            index
+          ] = marker;
+
+        }
+      );
+
+      // ====================================================
+      // ROUTE LINE
+      // ====================================================
+
+      if (
+        coordinates.length >= 2
+      ) {
+
+        routeLine =
+          L.polyline(
+            coordinates,
             {
-              icon:redIcon
+              color: "#2563eb",
+
+              weight: 5,
+
+              opacity: 0.85
             }
           ).addTo(map);
 
-          marker.bindPopup(`
+      }
 
-            <div style="min-width:220px">
+      // ====================================================
+      // LATEST LOCATION
+      // ====================================================
 
-              <div class="popup-title">
-                🚨 STOLEN DEVICE
+      const latest =
+        currentHistory[
+          currentHistory.length - 1
+        ];
+
+      if (latest) {
+
+        const latestLat =
+          Number(
+            latest.latitude
+          );
+
+        const latestLng =
+          Number(
+            latest.longitude
+          );
+
+        if (
+          Number.isFinite(
+            latestLat
+          ) &&
+          Number.isFinite(
+            latestLng
+          )
+        ) {
+
+          currentMarker =
+            L.marker(
+              [
+                latestLat,
+                latestLng
+              ],
+              {
+                icon:
+                  redIcon,
+
+                zIndexOffset:
+                  1000
+              }
+            )
+            .addTo(map);
+
+          currentMarker.bindPopup(`
+
+            <div
+              style="
+                min-width:250px;
+              "
+            >
+
+              <div
+                class="popup-title"
+              >
+                🚨 CURRENT DEVICE LOCATION
               </div>
 
-              <div class="popup-item">
+              <div
+                class="popup-item"
+              >
                 <b>Machine ID:</b><br>
-                ${device.machine_id}
+
+                ${
+                  latest.machine_id ||
+                  "Unknown"
+                }
               </div>
 
-              <div class="popup-item">
-                <b>Status:</b>
-                <span class="status">
-                  ${device.status}
-                </span>
+              <div
+                class="popup-item"
+              >
+                <b>Location:</b>
+
+                ${
+                  latest.city ||
+                  "Unknown"
+                },
+
+                ${
+                  latest.country ||
+                  "Unknown"
+                }
               </div>
 
-              <div class="popup-item">
+              <div
+                class="popup-item"
+              >
                 <b>Latitude:</b>
-                ${device.latitude}
+                ${latestLat}
               </div>
 
-              <div class="popup-item">
+              <div
+                class="popup-item"
+              >
                 <b>Longitude:</b>
-                ${device.longitude}
+                ${latestLng}
+              </div>
+
+              <div
+                class="popup-item"
+              >
+                <b>Captured:</b><br>
+
+                ${
+                  formatTime(
+                    latest.created_at
+                  )
+                }
               </div>
 
             </div>
 
           `);
 
-        });
+          currentMarker.openPopup();
 
-      }catch(err){
+        }
 
-        console.error("❌ MAP ERROR:", err);
+      }
 
+      // ====================================================
+      // FIT ROUTE
+      // ====================================================
+
+      if (
+        coordinates.length > 0
+      ) {
+
+        map.fitBounds(
+          coordinates,
+          {
+            padding: [
+              60,
+              60
+            ],
+
+            maxZoom: 16
+          }
+        );
+
+        if (
+          coordinates.length === 1
+        ) {
+
+          map.setZoom(15);
+        }
       }
 
     }
 
-    // ================= INITIAL LOAD =================
-    loadLocations();
+    // ======================================================
+    // LOAD EVERYTHING
+    // ======================================================
 
-    // ================= AUTO REFRESH =================
-    setInterval(() => {
+    async function loadEverything() {
 
-      loadLocations();
+      const token =
+        getToken();
 
-    }, 10000);
+      if (!token) {
+
+        loginOverlay.style.display =
+          "flex";
+
+        refreshStatus.textContent =
+          "Login required";
+
+        return;
+      }
+
+      refreshStatus.textContent =
+        "Updating...";
+
+      errorMessage.style.display =
+        "none";
+
+      try {
+
+        const devices =
+          await loadDevice();
+
+        console.log(
+          "📍 MAP DATA:",
+          devices
+        );
+
+        if (
+          !Array.isArray(
+            devices
+          ) ||
+          devices.length === 0
+        ) {
+
+          clearMap();
+
+          emptyMessage.style.display =
+            "block";
+
+          historyList.innerHTML =
+            `
+            <div
+              class="history-empty"
+            >
+              No registered devices.
+            </div>
+            `;
+
+          refreshStatus.textContent =
+            "No devices";
+
+          return;
+        }
+
+        /*
+          For now we are using the first registered
+          device. Later we will add a device selector
+          for multiple phones/laptops.
+        */
+
+        const device =
+          devices[0];
+
+        // Device information
+        document.getElementById(
+          "deviceInfo"
+        ).style.display =
+          "block";
+
+        document.getElementById(
+          "deviceTitle"
+        ).textContent =
+          `${
+            device.brand ||
+            ""
+          } ${
+            device.model ||
+            device.name ||
+            "Device"
+          }`;
+
+        document.getElementById(
+          "deviceMachine"
+        ).textContent =
+          `Machine ID: ${
+            device.machine_id ||
+            "Unknown"
+          }`;
+
+        document.getElementById(
+          "deviceStatus"
+        ).textContent =
+          `Status: ${
+            device.status ||
+            "unknown"
+          }`;
+
+        const machineId =
+          device.machine_id;
+
+        if (!machineId) {
+
+          throw new Error(
+            "Device has no machine ID"
+          );
+        }
+
+        const history =
+          await loadHistory(
+            machineId
+          );
+
+        console.log(
+          "📍 LOCATION HISTORY:",
+          history
+        );
+
+        drawHistory(
+          history.locations || []
+        );
+
+        refreshStatus.textContent =
+          `Dashboard updated ${formatNowNairobi()}`;
+
+      } catch (error) {
+
+        console.error(
+          "❌ MAP ERROR:",
+          error
+        );
+
+        refreshStatus.textContent =
+          "Update failed";
+
+        errorMessage.textContent =
+          error.message ||
+          "Unable to load map data.";
+
+        errorMessage.style.display =
+          "block";
+      }
+
+    }
+
+    // ======================================================
+    // START
+    // ======================================================
+
+    if (
+      getToken()
+    ) {
+
+      loginOverlay.style.display =
+        "none";
+
+      loadEverything();
+
+    } else {
+
+      loginOverlay.style.display =
+        "flex";
+    }
+
+    // ======================================================
+    // AUTO REFRESH
+    // =====================================================
+
+    setInterval(
+      () => {
+
+        if (
+          getToken()
+        ) {
+
+          loadEverything();
+        }
+
+      },
+      10000
+    );
 
   </script>
 
 </body>
+
 </html>

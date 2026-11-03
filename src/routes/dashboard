@@ -1,22 +1,28 @@
 const express = require("express");
+
 const router = express.Router();
+
 const db = require("../db");
 const sendEmail = require("../utils/email");
 const auth = require("../middleware/auth");
 
 console.log("📊 DASHBOARD ROUTES LOADED");
 
-// ================= DEVICES =================
+// ============================================================
+// DEVICES
+// ============================================================
+
 router.get("/devices", auth, async (req, res) => {
-
   try {
-
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT *
       FROM devices
       WHERE user_id = $1
       ORDER BY id DESC
-    `, [req.user.id]);
+      `,
+      [req.user.id]
+    );
 
     res.json(result.rows);
 
@@ -30,33 +36,44 @@ router.get("/devices", auth, async (req, res) => {
   }
 });
 
-// ================= DEVICE EVIDENCE =================
-router.get("/device/:machine_id", auth, async (req, res) => {
+// ============================================================
+// DEVICE EVIDENCE
+// ============================================================
 
+router.get("/device/:machine_id", auth, async (req, res) => {
   try {
 
     const { machine_id } = req.params;
 
-    const check = await db.query(`
-      SELECT *
+    const check = await db.query(
+      `
+      SELECT id
       FROM devices
       WHERE machine_id = $1
       AND user_id = $2
-    `, [machine_id, req.user.id]);
+      LIMIT 1
+      `,
+      [
+        machine_id,
+        req.user.id
+      ]
+    );
 
     if (check.rows.length === 0) {
-
       return res.status(403).json({
         error: "Unauthorized"
       });
     }
 
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT *
       FROM device_evidence
       WHERE machine_id = $1
       ORDER BY created_at DESC
-    `, [machine_id]);
+      `,
+      [machine_id]
+    );
 
     res.json(result.rows);
 
@@ -70,23 +87,54 @@ router.get("/device/:machine_id", auth, async (req, res) => {
   }
 });
 
-// ================= LIVE LOCATION =================
+// ============================================================
+// LATEST DEVICE LOCATION
+// ============================================================
+
 router.get("/location/:machine_id", auth, async (req, res) => {
 
   try {
 
     const { machine_id } = req.params;
 
-    const result = await db.query(`
-      SELECT *
-      FROM device_location
-      WHERE device_id = $1
-      ORDER BY id DESC
+    const result = await db.query(
+      `
+      SELECT
+        d.id AS device_id,
+        d.machine_id,
+        d.name,
+        d.brand,
+        d.model,
+        d.status,
+
+        dl.id AS location_id,
+        dl.ip,
+        dl.country,
+        dl.city,
+        dl.latitude,
+        dl.longitude,
+        dl.isp,
+        dl.created_at
+
+      FROM devices d
+
+      JOIN device_location dl
+        ON dl.device_id = d.id
+
+      WHERE d.machine_id = $1
+      AND d.user_id = $2
+
+      ORDER BY dl.created_at DESC
+
       LIMIT 1
-    `, [machine_id]);
+      `,
+      [
+        machine_id,
+        req.user.id
+      ]
+    );
 
     if (result.rows.length === 0) {
-
       return res.status(404).json({
         error: "No location found"
       });
@@ -104,26 +152,132 @@ router.get("/location/:machine_id", auth, async (req, res) => {
   }
 });
 
-// ================= MAP DATA =================
+// ============================================================
+// LOCATION HISTORY
+// ============================================================
+
+router.get("/history/:machine_id", auth, async (req, res) => {
+
+  try {
+
+    const { machine_id } = req.params;
+
+    let limit =
+      parseInt(req.query.limit, 10);
+
+    if (!Number.isFinite(limit)) {
+      limit = 200;
+    }
+
+    // Prevent huge requests.
+    limit = Math.max(
+      1,
+      Math.min(limit, 1000)
+    );
+
+    const result = await db.query(
+      `
+      SELECT
+        dl.id AS location_id,
+        d.id AS device_id,
+        d.machine_id,
+        d.name,
+        d.brand,
+        d.model,
+        d.status,
+
+        dl.ip,
+        dl.country,
+        dl.city,
+        dl.latitude,
+        dl.longitude,
+        dl.isp,
+        dl.created_at
+
+      FROM devices d
+
+      JOIN device_location dl
+        ON dl.device_id = d.id
+
+      WHERE d.machine_id = $1
+      AND d.user_id = $2
+      AND dl.latitude IS NOT NULL
+      AND dl.longitude IS NOT NULL
+
+      ORDER BY dl.created_at ASC
+
+      LIMIT $3
+      `,
+      [
+        machine_id,
+        req.user.id,
+        limit
+      ]
+    );
+
+    res.json({
+      success: true,
+      machine_id,
+      count: result.rows.length,
+      locations: result.rows
+    });
+
+  } catch (err) {
+
+    console.error("❌ LOCATION HISTORY ERROR:", err);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+// ============================================================
+// LIVE MAP DATA
+// ============================================================
+
 router.get("/map", auth, async (req, res) => {
 
   try {
 
-    const result = await db.query(`
-      SELECT
-        machine_id,
-        status,
-        city,
-        country,
-        latitude,
-        longitude,
-        last_seen
-      FROM devices
-      WHERE latitude IS NOT NULL
-      AND longitude IS NOT NULL
-      AND user_id = $1
-      ORDER BY id DESC
-    `, [req.user.id]);
+    const result = await db.query(
+      `
+      SELECT DISTINCT ON (d.id)
+
+        d.id AS device_id,
+        d.machine_id,
+        d.name,
+        d.type,
+        d.brand,
+        d.model,
+        d.status,
+        d.owner_name,
+
+        dl.ip,
+        dl.country,
+        dl.city,
+        dl.latitude,
+        dl.longitude,
+        dl.isp,
+
+        dl.created_at AS location_time,
+        d.last_seen
+
+      FROM devices d
+
+      JOIN device_location dl
+        ON dl.device_id = d.id
+
+      WHERE d.user_id = $1
+      AND dl.latitude IS NOT NULL
+      AND dl.longitude IS NOT NULL
+
+      ORDER BY
+        d.id,
+        dl.created_at DESC
+      `,
+      [req.user.id]
+    );
 
     res.json(result.rows);
 
@@ -137,23 +291,32 @@ router.get("/map", auth, async (req, res) => {
   }
 });
 
-// ================= EVIDENCE MAP =================
+// ============================================================
+// EVIDENCE MAP
+// ============================================================
+
 router.get("/evidence-map", auth, async (req, res) => {
 
   try {
 
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT *
       FROM device_evidence
+
       WHERE latitude IS NOT NULL
       AND longitude IS NOT NULL
+
       AND machine_id IN (
         SELECT machine_id
         FROM devices
         WHERE user_id = $1
       )
+
       ORDER BY created_at DESC
-    `, [req.user.id]);
+      `,
+      [req.user.id]
+    );
 
     res.json(result.rows);
 
@@ -167,28 +330,62 @@ router.get("/evidence-map", auth, async (req, res) => {
   }
 });
 
-// ================= MARK AS STOLEN =================
+// ============================================================
+// MARK AS STOLEN
+// ============================================================
+
 router.post("/mark-stolen", auth, async (req, res) => {
 
   try {
 
     const { machine_id } = req.body;
 
-    await db.query(`
+    if (!machine_id) {
+      return res.status(400).json({
+        error: "machine_id is required"
+      });
+    }
+
+    const updated = await db.query(
+      `
       UPDATE devices
       SET status = 'stolen'
+
       WHERE machine_id = $1
       AND user_id = $2
-    `, [machine_id, req.user.id]);
 
-    const result = await db.query(`
+      RETURNING machine_id
+      `,
+      [
+        machine_id,
+        req.user.id
+      ]
+    );
+
+    if (updated.rows.length === 0) {
+      return res.status(404).json({
+        error: "Device not found"
+      });
+    }
+
+    const result = await db.query(
+      `
       SELECT users.email
       FROM devices
+
       JOIN users
-      ON devices.user_id = users.id
+        ON devices.user_id = users.id
+
       WHERE devices.machine_id = $1
+      AND devices.user_id = $2
+
       LIMIT 1
-    `, [machine_id]);
+      `,
+      [
+        machine_id,
+        req.user.id
+      ]
+    );
 
     if (result.rows.length > 0) {
 
@@ -200,23 +397,37 @@ router.post("/mark-stolen", auth, async (req, res) => {
         `
         <h2>🚨 DeviceGuard Security Alert</h2>
 
-        <p>Your device has been marked as <b>STOLEN</b>.</p>
+        <p>
+          Your device has been marked as
+          <b>STOLEN</b>.
+        </p>
 
-        <p><b>Machine ID:</b> ${machine_id}</p>
+        <p>
+          <b>Machine ID:</b>
+          ${machine_id}
+        </p>
 
-        <p><b>Time:</b> ${new Date().toLocaleString()}</p>
+        <p>
+          <b>Time:</b>
+          ${new Date().toLocaleString()}
+        </p>
 
-        <p>DeviceGuard is now collecting evidence.</p>
+        <p>
+          DeviceGuard protection is now active.
+        </p>
 
         <br>
 
-        <p>— DeviceGuard Team</p>
+        <p>
+          — DeviceGuard Team
+        </p>
         `
       );
     }
 
     res.json({
-      success: true
+      success: true,
+      message: "Device marked as stolen"
     });
 
   } catch (err) {
@@ -229,22 +440,47 @@ router.post("/mark-stolen", auth, async (req, res) => {
   }
 });
 
-// ================= MARK SAFE =================
+// ============================================================
+// MARK AS SAFE
+// ============================================================
+
 router.post("/mark-safe", auth, async (req, res) => {
 
   try {
 
     const { machine_id } = req.body;
 
-    await db.query(`
+    if (!machine_id) {
+      return res.status(400).json({
+        error: "machine_id is required"
+      });
+    }
+
+    const result = await db.query(
+      `
       UPDATE devices
       SET status = 'active'
+
       WHERE machine_id = $1
       AND user_id = $2
-    `, [machine_id, req.user.id]);
+
+      RETURNING machine_id
+      `,
+      [
+        machine_id,
+        req.user.id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: "Device not found"
+      });
+    }
 
     res.json({
-      success: true
+      success: true,
+      message: "Device marked as safe"
     });
 
   } catch (err) {
@@ -256,5 +492,7 @@ router.post("/mark-safe", auth, async (req, res) => {
     });
   }
 });
+
+// ============================================================
 
 module.exports = router;

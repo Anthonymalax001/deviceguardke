@@ -1,6 +1,9 @@
+
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DeviceGuard Evidence Intelligence Map</title>
 
   <!-- LEAFLET -->
@@ -10,7 +13,6 @@
   />
 
   <style>
-
     * {
       margin: 0;
       padding: 0;
@@ -55,7 +57,6 @@
     .leaflet-popup-content-wrapper {
       border-radius: 16px;
     }
-
   </style>
 </head>
 
@@ -69,26 +70,29 @@
 <script>
 
   // ================= MAP =================
+
   const map = L.map("map").setView(
     [-1.286389, 36.817223],
     12
   );
 
   // ================= TILES =================
+
   L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     {
-      attribution: "© OpenStreetMap contributors"
+      attribution: "&copy; OpenStreetMap contributors"
     }
   ).addTo(map);
 
   // ================= ICONS =================
+
   const cameraIcon = L.icon({
     iconUrl:
       "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
 
     iconSize: [38, 38],
-    iconAnchor: [19, 38],
+    iconAnchor: [19, 38]
   });
 
   const screenshotIcon = L.icon({
@@ -96,51 +100,84 @@
       "https://maps.google.com/mapfiles/ms/icons/purple-dot.png",
 
     iconSize: [38, 38],
-    iconAnchor: [19, 38],
+    iconAnchor: [19, 38]
   });
 
   // ================= FETCH EVIDENCE =================
+
   fetch("/api/evidence/map")
 
-    .then((res) => res.json())
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error(
+          `Evidence request failed: HTTP ${res.status}`
+        );
+      }
+
+      return res.json();
+    })
 
     .then((data) => {
 
-      console.log("📸 Evidence map data:", data);
+      console.log("Evidence map data:", data);
+
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid evidence response");
+      }
 
       if (!data.length) {
         alert("No evidence locations found.");
+        return;
       }
 
       const bounds = [];
 
       data.forEach((p) => {
 
-        if (!p.latitude || !p.longitude) return;
+        if (
+          p.latitude == null ||
+          p.longitude == null
+        ) {
+          return;
+        }
 
-        bounds.push([p.latitude, p.longitude]);
+        const latitude = Number(p.latitude);
+        const longitude = Number(p.longitude);
+
+        if (
+          !Number.isFinite(latitude) ||
+          !Number.isFinite(longitude)
+        ) {
+          return;
+        }
+
+        bounds.push([latitude, longitude]);
 
         // ================= ICON TYPE =================
+
         const selectedIcon =
           p.type === "camera"
             ? cameraIcon
             : screenshotIcon;
 
         // ================= IMAGE URL =================
+
+        // Uses the same server that hosts this page.
         const imageUrl =
-          `http://localhost:5050/uploads/evidence/${p.file_path}`;
+          `/uploads/evidence/${encodeURIComponent(p.file_path)}`;
 
         // ================= POPUP =================
+
         const popup = `
 
           <div class="popup-container">
 
             <div class="popup-title">
-              📸 Device Evidence
+              Device Evidence
             </div>
 
             <div class="popup-info">
-              <b>Type:</b> ${p.type}
+              <b>Type:</b> ${p.type || "Evidence"}
             </div>
 
             <div class="popup-info">
@@ -156,6 +193,9 @@
             <img
               src="${imageUrl}"
               class="popup-img"
+              alt="Device evidence"
+              loading="lazy"
+              onerror="this.style.display='none'"
             />
 
           </div>
@@ -163,18 +203,18 @@
         `;
 
         // ================= MARKER =================
+
         L.marker(
-          [p.latitude, p.longitude],
+          [latitude, longitude],
           { icon: selectedIcon }
         )
-
-        .addTo(map)
-
-        .bindPopup(popup);
+          .addTo(map)
+          .bindPopup(popup);
 
       });
 
       // ================= AUTO FIT =================
+
       if (bounds.length > 0) {
         map.fitBounds(bounds, {
           padding: [50, 50]
@@ -186,8 +226,12 @@
     .catch((err) => {
 
       console.error(
-        "❌ Evidence map error:",
+        "Evidence map error:",
         err
+      );
+
+      alert(
+        "Unable to load evidence locations. Please try again."
       );
 
     });
