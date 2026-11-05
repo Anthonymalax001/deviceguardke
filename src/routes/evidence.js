@@ -1,6 +1,9 @@
+
 const express = require("express");
 const router = express.Router();
+
 const db = require("../db");
+const auth = require("../middleware/auth");
 
 console.log("🔵 evidence.js LOADED");
 
@@ -8,62 +11,86 @@ console.log("🔵 evidence.js LOADED");
 router.get("/test", (req, res) => {
   res.json({
     ok: true,
-    message: "Evidence route is working",
+    message: "Evidence route is working"
   });
 });
 
 // ================= GET ALL EVIDENCE =================
-router.get("/all", async (req, res) => {
+// Only return evidence belonging to devices owned
+// by the authenticated user.
+router.get("/all", auth, async (req, res) => {
   try {
+    console.log(
+      "🔥 HIT /api/evidence/all - USER:",
+      req.user.id
+    );
 
-    console.log("🔥 HIT /api/evidence/all");
+    const result = await db.query(
+      `
+      SELECT e.*
+      FROM device_evidence e
+      WHERE EXISTS (
+        SELECT 1
+        FROM devices d
+        WHERE d.machine_id = e.machine_id
+          AND d.user_id = $1
+      )
+      ORDER BY e.created_at DESC
+      `,
+      [req.user.id]
+    );
 
-    const result = await db.query(`
-      SELECT *
-      FROM device_evidence
-      ORDER BY created_at DESC
-    `);
-
-    res.json(result.rows);
+    return res.json(result.rows);
 
   } catch (err) {
+    console.error("❌ GET ALL EVIDENCE ERROR:", err);
 
-    console.error("❌ ERROR:", err);
-
-    res.status(500).json({
-      error: err.message,
+    return res.status(500).json({
+      error: "Failed to retrieve evidence"
     });
   }
 });
 
 // ================= EVIDENCE MAP =================
-router.get("/map", async (req, res) => {
+// Only return location records belonging to the
+// authenticated user's registered devices.
+router.get("/map", auth, async (req, res) => {
   try {
+    console.log(
+      "🗺️ HIT /api/evidence/map - USER:",
+      req.user.id
+    );
 
-    console.log("🗺️ HIT /api/evidence/map");
-
-    const result = await db.query(`
+    const result = await db.query(
+      `
       SELECT
-        id,
-        machine_id,
-        file_path,
-        latitude,
-        longitude,
-        created_at
-      FROM device_evidence
-      WHERE latitude IS NOT NULL
-      AND longitude IS NOT NULL
-      ORDER BY created_at DESC
-    `);
+        e.id,
+        e.machine_id,
+        e.file_path,
+        e.latitude,
+        e.longitude,
+        e.created_at
+      FROM device_evidence e
+      WHERE e.latitude IS NOT NULL
+        AND e.longitude IS NOT NULL
+        AND EXISTS (
+          SELECT 1
+          FROM devices d
+          WHERE d.machine_id = e.machine_id
+            AND d.user_id = $1
+        )
+      ORDER BY e.created_at DESC
+      `,
+      [req.user.id]
+    );
 
-    res.json(result.rows);
+    return res.json(result.rows);
 
   } catch (err) {
+    console.error("❌ EVIDENCE MAP ERROR:", err);
 
-    console.error("❌ MAP ERROR:", err);
-
-    res.status(500).json({
-      error: err.message,
+    return res.status(500).json({
+      error: "Failed to retrieve evidence map"
     });
   }
 });

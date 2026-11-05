@@ -1,12 +1,11 @@
 
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DeviceGuard Evidence Intelligence Map</title>
 
-  <!-- LEAFLET -->
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -30,6 +29,21 @@
       width: 100vw;
     }
 
+    #map-status {
+      position: absolute;
+      z-index: 1000;
+      top: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      max-width: 90%;
+      text-align: center;
+    }
+
     .popup-container {
       width: 220px;
     }
@@ -45,6 +59,7 @@
       font-size: 14px;
       margin-bottom: 6px;
       color: #333;
+      overflow-wrap: anywhere;
     }
 
     .popup-img {
@@ -63,20 +78,17 @@
 <body>
 
 <div id="map"></div>
+<div id="map-status">Waiting for secure authentication...</div>
 
-<!-- LEAFLET JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-
   // ================= MAP =================
 
   const map = L.map("map").setView(
     [-1.286389, 36.817223],
     12
   );
-
-  // ================= TILES =================
 
   L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -90,7 +102,6 @@
   const cameraIcon = L.icon({
     iconUrl:
       "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-
     iconSize: [38, 38],
     iconAnchor: [19, 38]
   });
@@ -98,111 +109,163 @@
   const screenshotIcon = L.icon({
     iconUrl:
       "https://maps.google.com/mapfiles/ms/icons/purple-dot.png",
-
     iconSize: [38, 38],
     iconAnchor: [19, 38]
   });
 
-  // ================= FETCH EVIDENCE =================
+  const statusElement = document.getElementById("map-status");
 
-  fetch("/api/evidence/map")
+  function setStatus(message) {
+    statusElement.textContent = message;
+  }
 
-    .then((res) => {
-      if (!res.ok) {
+  // ================= SAFE HTML =================
+
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, character => {
+      const entities = {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      };
+
+      return entities[character];
+    });
+  }
+
+  // ================= LOAD EVIDENCE =================
+
+  async function loadEvidence(token) {
+    try {
+      setStatus("Loading evidence locations...");
+
+      const response = await fetch("/api/evidence/map", {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "application/json"
+        }
+      });
+
+      if (response.status === 401) {
+        throw new Error("Your session has expired. Please log in again.");
+      }
+
+      if (response.status === 403) {
+        throw new Error("You are not authorized to view this evidence.");
+      }
+
+      if (!response.ok) {
         throw new Error(
-          `Evidence request failed: HTTP ${res.status}`
+          `Evidence request failed: HTTP ${response.status}`
         );
       }
 
-      return res.json();
-    })
-
-    .then((data) => {
+      const data = await response.json();
 
       console.log("Evidence map data:", data);
 
       if (!Array.isArray(data)) {
-        throw new Error("Invalid evidence response");
+        throw new Error("Invalid evidence response.");
       }
 
-      if (!data.length) {
-        alert("No evidence locations found.");
+      if (data.length === 0) {
+        setStatus("No evidence locations found.");
         return;
       }
 
       const bounds = [];
+      let markerCount = 0;
 
-      data.forEach((p) => {
-
+      data.forEach(item => {
         if (
-          p.latitude == null ||
-          p.longitude == null
+          item.latitude == null ||
+          item.longitude == null
         ) {
           return;
         }
 
-        const latitude = Number(p.latitude);
-        const longitude = Number(p.longitude);
+        const latitude = Number(item.latitude);
+        const longitude = Number(item.longitude);
 
         if (
           !Number.isFinite(latitude) ||
-          !Number.isFinite(longitude)
+          !Number.isFinite(longitude) ||
+          latitude < -90 ||
+          latitude > 90 ||
+          longitude < -180 ||
+          longitude > 180
         ) {
           return;
         }
 
         bounds.push([latitude, longitude]);
 
-        // ================= ICON TYPE =================
+        const evidenceType = String(
+          item.type || "evidence"
+        ).toLowerCase();
 
         const selectedIcon =
-          p.type === "camera"
+          evidenceType === "camera"
             ? cameraIcon
             : screenshotIcon;
 
-        // ================= IMAGE URL =================
-
-        // Uses the same server that hosts this page.
+        // Use the temporary signed URL returned by the backend.
         const imageUrl =
-          `/uploads/evidence/${encodeURIComponent(p.file_path)}`;
+          typeof item.image_url === "string" &&
+          item.image_url.startsWith("https://")
+            ? item.image_url
+            : null;
 
-        // ================= POPUP =================
+        const popup = document.createElement("div");
+        popup.className = "popup-container";
 
-        const popup = `
+        const title = document.createElement("div");
+        title.className = "popup-title";
+        title.textContent = "Device Evidence";
 
-          <div class="popup-container">
+        const type = document.createElement("div");
+        type.className = "popup-info";
+        type.textContent = "Type: " + evidenceType;
 
-            <div class="popup-title">
-              Device Evidence
-            </div>
+        const machine = document.createElement("div");
+        machine.className = "popup-info";
+        machine.textContent = "Machine: " + (item.machine_id || "Unknown");
 
-            <div class="popup-info">
-              <b>Type:</b> ${p.type || "Evidence"}
-            </div>
+        const captured = document.createElement("div");
+        captured.className = "popup-info";
 
-            <div class="popup-info">
-              <b>Machine:</b><br>
-              ${p.machine_id}
-            </div>
+        const date = new Date(item.created_at);
 
-            <div class="popup-info">
-              <b>Captured:</b><br>
-              ${new Date(p.created_at).toLocaleString()}
-            </div>
+        captured.textContent =
+          "Captured: " +
+          (
+            Number.isNaN(date.getTime())
+              ? "Unknown"
+              : date.toLocaleString()
+          );
 
-            <img
-              src="${imageUrl}"
-              class="popup-img"
-              alt="Device evidence"
-              loading="lazy"
-              onerror="this.style.display='none'"
-            />
+        popup.appendChild(title);
+        popup.appendChild(type);
+        popup.appendChild(machine);
+        popup.appendChild(captured);
 
-          </div>
+        if (imageUrl) {
+          const image = document.createElement("img");
 
-        `;
+          image.src = imageUrl;
+          image.alt = "Device evidence";
+          image.className = "popup-img";
+          image.loading = "lazy";
 
-        // ================= MARKER =================
+          image.onerror = () => {
+            image.style.display = "none";
+          };
+
+          popup.appendChild(image);
+        }
 
         L.marker(
           [latitude, longitude],
@@ -211,9 +274,8 @@
           .addTo(map)
           .bindPopup(popup);
 
+        markerCount++;
       });
-
-      // ================= AUTO FIT =================
 
       if (bounds.length > 0) {
         map.fitBounds(bounds, {
@@ -221,20 +283,76 @@
         });
       }
 
-    })
-
-    .catch((err) => {
-
-      console.error(
-        "Evidence map error:",
-        err
+      setStatus(
+        markerCount > 0
+          ? `${markerCount} evidence location(s) loaded`
+          : "No valid evidence coordinates found."
       );
 
-      alert(
-        "Unable to load evidence locations. Please try again."
-      );
+      if (markerCount > 0) {
+        setTimeout(() => {
+          statusElement.style.display = "none";
+        }, 4000);
+      }
 
-    });
+    } catch (error) {
+      console.error("Evidence map error:", error);
+      setStatus(error.message || "Unable to load evidence locations.");
+    }
+  }
+
+  // ================= SECURE TOKEN HANDOFF =================
+
+  let authenticationReceived = false;
+
+  // Only accept the token from the window that opened this page.
+  window.addEventListener("message", event => {
+    if (event.source !== window.opener) {
+      return;
+    }
+
+    if (
+      !event.data ||
+      event.data.type !== "DEVICEGUARD_MAP_AUTH"
+    ) {
+      return;
+    }
+
+    if (authenticationReceived) {
+      return;
+    }
+
+    const token = event.data.token;
+
+    if (
+      typeof token !== "string" ||
+      !token.trim()
+    ) {
+      setStatus("Invalid authentication. Please log in again.");
+      return;
+    }
+
+    authenticationReceived = true;
+
+    loadEvidence(token);
+  });
+
+  // Tell the opening React page that the map is ready.
+  if (window.opener) {
+    window.opener.postMessage(
+      { type: "DEVICEGUARD_MAP_READY" },
+      "*"
+    );
+  } else {
+    setStatus("Open this map from your DeviceGuard dashboard.");
+  }
+
+  // Avoid waiting forever if the opening page does not respond.
+  setTimeout(() => {
+    if (!authenticationReceived && window.opener) {
+      setStatus("Authentication timed out. Close this page and try again.");
+    }
+  }, 15000);
 
 </script>
 

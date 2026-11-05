@@ -1,10 +1,10 @@
+
 const SibApiV3Sdk = require("sib-api-v3-sdk");
 
 const fs = require("fs");
 const path = require("path");
 
 console.log("🔥 EMAIL.JS RECOVERY + EVIDENCE VERSION LOADED 🔥");
-
 
 // ============================================================
 // BREVO CLIENT
@@ -18,7 +18,6 @@ const apiKey =
 
 apiKey.apiKey =
   process.env.BREVO_API_KEY;
-
 
 // ============================================================
 // SEND EMAIL
@@ -34,7 +33,6 @@ async function sendEmail(
     const apiInstance =
       new SibApiV3Sdk.TransactionalEmailsApi();
 
-
     // ========================================================
     // BUILD ATTACHMENTS
     // ========================================================
@@ -45,31 +43,48 @@ async function sendEmail(
       Array.isArray(attachments) &&
       attachments.length > 0
     ) {
-      for (const filePath of attachments) {
-        console.log(
-          "📎 ATTACHMENT PATH:",
-          filePath
-        );
-
-        if (!filePath) {
-          console.log(
-            "⚠️ EMPTY ATTACHMENT PATH — SKIPPING"
-          );
-
+      for (const attachment of attachments) {
+        if (!attachment) {
+          console.log("⚠️ EMPTY ATTACHMENT — SKIPPING");
           continue;
         }
 
-        if (!fs.existsSync(filePath)) {
-          console.log(
-            "❌ FILE NOT FOUND:",
-            filePath
-          );
+        let fileBuffer;
+        let fileName;
 
-          continue;
+        // Cloudinary / memory upload attachment
+        if (Buffer.isBuffer(attachment.buffer)) {
+          fileBuffer = attachment.buffer;
+          fileName =
+            attachment.name || "device-evidence.jpg";
         }
 
-        const fileBuffer =
-          fs.readFileSync(filePath);
+        // Existing local-file attachment support
+        else if (typeof attachment === "string") {
+          console.log(
+            "📎 ATTACHMENT PATH:",
+            attachment
+          );
+
+          if (!fs.existsSync(attachment)) {
+            console.log(
+              "❌ FILE NOT FOUND:",
+              attachment
+            );
+            continue;
+          }
+
+          fileBuffer =
+            fs.readFileSync(attachment);
+
+          fileName =
+            path.basename(attachment);
+        } else {
+          console.log(
+            "⚠️ UNSUPPORTED ATTACHMENT — SKIPPING"
+          );
+          continue;
+        }
 
         console.log(
           "📦 FILE SIZE:",
@@ -77,20 +92,16 @@ async function sendEmail(
         );
 
         formattedAttachments.push({
-          name:
-            path.basename(filePath),
-
-          content:
-            fileBuffer.toString("base64")
+          name: fileName,
+          content: fileBuffer.toString("base64")
         });
 
         console.log(
           "✅ ATTACHMENT ADDED:",
-          path.basename(filePath)
+          fileName
         );
       }
     }
-
 
     // ========================================================
     // EMAIL DATA
@@ -113,20 +124,14 @@ async function sendEmail(
       htmlContent: html
     };
 
-
     // ========================================================
-    // IMPORTANT:
-    // ONLY ADD ATTACHMENT PROPERTY WHEN
-    // THERE IS AT LEAST ONE REAL FILE.
+    // ONLY ADD ATTACHMENT WHEN A REAL FILE EXISTS
     // ========================================================
 
-    if (
-      formattedAttachments.length > 0
-    ) {
+    if (formattedAttachments.length > 0) {
       emailData.attachment =
         formattedAttachments;
     }
-
 
     // ========================================================
     // LOGGING
@@ -137,20 +142,9 @@ async function sendEmail(
       formattedAttachments.length
     );
 
-    console.log(
-      "📤 SENDING EMAIL..."
-    );
-
-    console.log(
-      "📨 TO:",
-      to
-    );
-
-    console.log(
-      "📝 SUBJECT:",
-      subject
-    );
-
+    console.log("📤 SENDING EMAIL...");
+    console.log("📨 TO:", to);
+    console.log("📝 SUBJECT:", subject);
 
     // ========================================================
     // SEND
@@ -161,34 +155,22 @@ async function sendEmail(
         emailData
       );
 
-    console.log(
-      "✅ EMAIL SENT"
-    );
-
-    console.log(
-      response
-    );
+    console.log("✅ EMAIL SENT");
+    console.log(response);
 
     return true;
 
   } catch (err) {
-    console.log(
-      "❌ EMAIL SEND FAILED"
-    );
+    console.log("❌ EMAIL SEND FAILED");
 
     if (err.response) {
-      console.log(
-        err.response.body
-      );
+      console.log(err.response.body);
     } else {
-      console.log(
-        err.message
-      );
+      console.log(err.message);
     }
 
     return false;
   }
 }
-
 
 module.exports = sendEmail;

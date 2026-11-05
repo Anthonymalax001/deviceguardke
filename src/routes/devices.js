@@ -8,6 +8,9 @@ const auth = require("../middleware/auth");
 
 const sendEmail = require("../utils/email");
 
+const cloudinary = require("cloudinary").v2;
+
+const { getEvidenceUrl } = require("../utils/cloudinary");
 
 
 const router = express.Router();
@@ -1526,13 +1529,26 @@ router.get("/:machine_id/evidence", auth, async (req, res) => {
 
       for (const item of evidence.rows) {
 
-        const imageUrl =
+        let imageUrl = null;
 
-          `/uploads/evidence/${encodeURIComponent(
-
-            item.file_path
-
-          )}`;
+        try {
+          const asset = await cloudinary.api.resource(
+            item.file_path,
+            {
+              resource_type: "image",
+              type: "authenticated"
+            }
+          );
+          imageUrl = getEvidenceUrl(
+            item.file_path,
+            asset.format
+          );
+        } catch (cloudError) {
+          console.error(
+            "CLOUDINARY EVIDENCE RETRIEVAL ERROR:",
+            cloudError.message
+          );
+        }
 
 
 
@@ -1628,14 +1644,14 @@ router.get("/:machine_id/evidence", auth, async (req, res) => {
 
         html += `
 
-            <img
-
-              src="${imageUrl}"
-
-              alt="DeviceGuard evidence"
-
-            />
-
+        ${
+          imageUrl
+            ? `<img
+                 src="${escapeHtml(imageUrl)}"
+                 alt="DeviceGuard evidence"
+               />`
+            : `<p class="empty">Evidence image is currently unavailable.</p>`
+        }
 
 
           </div>
