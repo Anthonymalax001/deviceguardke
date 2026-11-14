@@ -826,29 +826,45 @@ router.post(
 
       );
 
-      // ======================================================
+   
+// ======================================================
+// STOLEN DEVICE — CHECK PENDING EVIDENCE REQUEST
+// ======================================================
 
-      // STOLEN DEVICE
+if (status === "stolen") {
 
-      // ======================================================
+  const evidenceRequest = await db.query(
+    `
+    UPDATE devices
+    SET evidence_request_pending = FALSE
+    WHERE machine_id = $1
+      AND agent_token = $2
+      AND status = 'stolen'
+      AND evidence_request_pending = TRUE
+    RETURNING machine_id
+    `,
+    [machineId, req.agentToken]
+  );
 
-      if (status === "stolen") {
+  if (evidenceRequest.rows.length > 0) {
 
-        console.log(
+    console.log(
+      "🚨 CAPTURE_EVIDENCE SENT:",
+      machineId
+    );
 
-          "🚨 CAPTURE_EVIDENCE SENT"
+    return res.json({
+      success: true,
+      instruction: "CAPTURE_EVIDENCE"
+    });
 
-        );
+  }
 
-        return res.json({
+  console.log(
+    "📡 Stolen device online — no pending evidence request"
+  );
 
-          success: true,
-
-          instruction: "CAPTURE_EVIDENCE"
-
-        });
-
-      }
+}
 
       return res.json({
 

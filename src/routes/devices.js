@@ -2171,4 +2171,61 @@ router.put("/:machine_id/business", auth, async (req, res) => {
   }
 });
 
+
+// ======================================================
+// REQUEST EVIDENCE FROM A STOLEN DEVICE
+// Called by the owner's replacement/control phone.
+// ======================================================
+
+router.post(
+  "/:machine_id/evidence-request",
+  auth,
+  async (req, res) => {
+    try {
+      const machineId = String(
+        req.params.machine_id || ""
+      ).trim();
+
+      if (!machineId) {
+        return res.status(400).json({
+          success: false,
+          error: "Missing machine ID"
+        });
+      }
+
+      const result = await db.query(
+        `
+        UPDATE devices
+        SET evidence_request_pending = TRUE
+        WHERE machine_id = $1
+          AND user_id = $2
+          AND status = 'stolen'
+        RETURNING machine_id
+        `,
+        [machineId, req.user.id]
+      );
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({
+          success: false,
+          error: "Stolen device not found"
+        });
+      }
+
+      return res.json({
+        success: true,
+        message: "Evidence request queued successfully"
+      });
+
+    } catch (error) {
+      console.error("Evidence request error:", error);
+
+      return res.status(500).json({
+        success: false,
+        error: "Could not request evidence"
+      });
+    }
+  }
+);
+
 module.exports = router;
